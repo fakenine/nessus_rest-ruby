@@ -162,13 +162,6 @@ Style/GuardClause:
   Exclude:
     - 'lib/nessus_rest.rb'
 
-# Offense count: 95
-# Cop supports --auto-correct.
-# Configuration parameters: SupportedStyles, UseHashRocketsWithSymbolValues, PreferHashRocketsForNonAlnumEndingSymbols.
-# SupportedStyles: ruby19, hash_rockets, no_mixed_keys, ruby19_no_mixed_keys
-Style/HashSyntax:
-  EnforcedStyle: hash_rockets
-
 # Offense count: 6
 Style/IdenticalConditionalBranches:
   Exclude:
@@ -270,19 +263,6 @@ Style/SafeNavigation:
 # SupportedStyles: use_perl_names, use_english_names
 Style/SpecialGlobalVars:
   Exclude:
-    - 'nessus_rest.gemspec'
-
-# Offense count: 30
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, ConsistentQuotesInMultiline.
-# SupportedStyles: single_quotes, double_quotes
-Style/StringLiterals:
-  Exclude:
-    - 'Gemfile'
-    - 'examples/backup-reports.rb'
-    - 'examples/serial-scan.rb'
-    - 'examples/simple.rb'
-    - 'lib/nessus_rest.rb'
     - 'nessus_rest.gemspec'
 
 # Offense count: 2

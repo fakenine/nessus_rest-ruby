@@ -142,12 +142,12 @@ module NessusREST
     #  end
     def authdefault
       payload = {
-        :username => @username,
-        :password => @password,
-        :json => 1,
-        :authenticationmethod => true
+        username: @username,
+        password: @password,
+        json: 1,
+        authenticationmethod: true
       }
-      res = http_post(:uri => "/session", :data => payload)
+      res = http_post(uri: '/session', data: payload)
       if res['token']
         @token = "token=#{res['token']}"
         @x_cookie = { 'X-Cookie' => @token }
@@ -186,7 +186,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.get_server_properties
     def get_server_properties
-      http_get(:uri => "/server/properties", :fields => x_cookie)
+      http_get(uri: '/server/properties', fields: x_cookie)
     end
     alias_method :server_properties, :get_server_properties
 
@@ -203,13 +203,13 @@ module NessusREST
     # https://localhost:8834/api#/resources/users/create
     def user_add(username, password, permissions, type)
       payload = {
-        :username => username,
-        :password => password,
-        :permissions => permissions,
-        :type => type,
-        :json => 1
+        username: username,
+        password: password,
+        permissions: permissions,
+        type: type,
+        json: 1
       }
-      http_post(:uri => "/users", :fields => x_cookie, :data => payload)
+      http_post(uri: '/users', fields: x_cookie, data: payload)
     end
 
     # delete user with user_id
@@ -221,7 +221,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  puts n.user_delete(1)
     def user_delete(user_id)
-      res = http_delete(:uri => "/users/#{user_id}", :fields => x_cookie)
+      res = http_delete(uri: "/users/#{user_id}", fields: x_cookie)
       return res.code
     end
 
@@ -235,10 +235,10 @@ module NessusREST
     #  puts n.user_chpasswd(1,'newPassword')
     def user_chpasswd(user_id, password)
       payload = {
-        :password => password,
-        :json => 1
+        password: password,
+        json: 1
       }
-      res = http_put(:uri => "/users/#{user_id}/chpasswd", :data => payload, :fields => x_cookie)
+      res = http_put(uri: "/users/#{user_id}/chpasswd", data: payload, fields: x_cookie)
       return res.code
     end
 
@@ -251,7 +251,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  puts n.user_logout
     def user_logout
-      res = http_delete(:uri => "/session", :fields => x_cookie)
+      res = http_delete(uri: '/session', fields: x_cookie)
       return res.code
     end
     alias_method :logout, :user_logout
@@ -265,7 +265,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_policies
     def list_policies
-      http_get(:uri => "/policies", :fields => x_cookie)
+      http_get(uri: '/policies', fields: x_cookie)
     end
 
     # Get List of Users
@@ -277,7 +277,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_users
     def list_users
-      http_get(:uri => "/users", :fields => x_cookie)
+      http_get(uri: '/users', fields: x_cookie)
     end
 
     # Get List of Folders
@@ -289,7 +289,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_folders
     def list_folders
-      http_get(:uri => "/folders", :fields => x_cookie)
+      http_get(uri: '/folders', fields: x_cookie)
     end
 
     # Get List of Scanners
@@ -301,7 +301,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_scanners
     def list_scanners
-      http_get(:uri => "/scanners", :fields => x_cookie)
+      http_get(uri: '/scanners', fields: x_cookie)
     end
 
     # Get List of Families
@@ -313,7 +313,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_families
     def list_families
-      http_get(:uri => "/plugins/families", :fields => x_cookie)
+      http_get(uri: '/plugins/families', fields: x_cookie)
     end
 
     # Get List of Plugins
@@ -325,7 +325,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_plugins
     def list_plugins(family_id)
-      http_get(:uri => "/plugins/families/#{family_id}", :fields => x_cookie)
+      http_get(uri: "/plugins/families/#{family_id}", fields: x_cookie)
     end
 
     # Get List of Templates
@@ -337,11 +337,11 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_templates
     def list_templates(type)
-      res = http_get(:uri => "/editor/#{type}/templates", :fields => x_cookie)
+      res = http_get(uri: "/editor/#{type}/templates", fields: x_cookie)
     end
 
     def plugin_details(plugin_id)
-      http_get(:uri => "/plugins/plugin/#{plugin_id}", :fields => x_cookie)
+      http_get(uri: "/plugins/plugin/#{plugin_id}", fields: x_cookie)
     end
 
     # check if logged in user is administrator
@@ -357,7 +357,7 @@ module NessusREST
     #	puts "NOT administrator"
     #  end
     def is_admin
-      res = http_get(:uri => "/session", :fields => x_cookie)
+      res = http_get(uri: '/session', fields: x_cookie)
       if res['permissions'] == 128
         return true
       else
@@ -374,20 +374,20 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.server_status
     def server_status
-      http_get(:uri => "/server/status", :fields => x_cookie)
+      http_get(uri: '/server/status', fields: x_cookie)
     end
 
     def scan_create(uuid, settings)
       payload = {
-        :uuid => uuid,
-        :settings => settings,
-        :json => 1
+        uuid: uuid,
+        settings: settings,
+        json: 1
       }.to_json
-      http_post(:uri => "/scans", :body => payload, :fields => x_cookie, :ctype => 'application/json')
+      http_post(uri: '/scans', body: payload, fields: x_cookie, ctype: 'application/json')
     end
 
     def scan_launch(scan_id)
-      http_post(:uri => "/scans/#{scan_id}/launch", :fields => x_cookie)
+      http_post(uri: "/scans/#{scan_id}/launch", fields: x_cookie)
     end
 
     # Get List of Scans
@@ -399,36 +399,36 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.scan_list
     def scan_list
-      http_get(:uri => "/scans", :fields => x_cookie)
+      http_get(uri: '/scans', fields: x_cookie)
     end
     alias_method :list_scans, :scan_list
 
     def scan_details(scan_id)
-      http_get(:uri => "/scans/#{scan_id}", :fields => x_cookie)
+      http_get(uri: "/scans/#{scan_id}", fields: x_cookie)
     end
 
     def scan_pause(scan_id)
-      http_post(:uri => "/scans/#{scan_id}/pause", :fields => x_cookie)
+      http_post(uri: "/scans/#{scan_id}/pause", fields: x_cookie)
     end
 
     def scan_resume(scan_id)
-      http_post(:uri => "/scans/#{scan_id}/resume", :fields => x_cookie)
+      http_post(uri: "/scans/#{scan_id}/resume", fields: x_cookie)
     end
 
     def scan_stop(scan_id)
-      http_post(:uri => "/scans/#{scan_id}/stop", :fields => x_cookie)
+      http_post(uri: "/scans/#{scan_id}/stop", fields: x_cookie)
     end
 
     def scan_export(scan_id, format)
       payload = {
-        :format => format
+        format: format
       }.to_json
-      http_post(:uri => "/scans/#{scan_id}/export", :body => payload, :ctype => 'application/json', :fields => x_cookie)
+      http_post(uri: "/scans/#{scan_id}/export", body: payload, ctype: 'application/json', fields: x_cookie)
     end
 
     def scan_export_status(scan_id, file_id)
       request = Net::HTTP::Get.new("/scans/#{scan_id}/export/#{file_id}/status")
-      request.add_field("X-Cookie", @token)
+      request.add_field('X-Cookie', @token)
       res = @connection.request(request)
       res = JSON.parse(res.body)
       return res
@@ -443,7 +443,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  puts n.scan_delete(1)
     def scan_delete(scan_id)
-      res = http_delete(:uri => "/scans/#{scan_id}", :fields => x_cookie)
+      res = http_delete(uri: "/scans/#{scan_id}", fields: x_cookie)
       if res.code == 200 then
         return true
       end
@@ -451,7 +451,7 @@ module NessusREST
     end
 
     def policy_delete(policy_id)
-      res = http_delete(:uri => "/policies/#{policy_id}", :fields => x_cookie)
+      res = http_delete(uri: "/policies/#{policy_id}", fields: x_cookie)
       return res.code
     end
 
@@ -464,7 +464,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.editor_templates('scan',uuid)
     def editor_templates(type, uuid)
-      res = http_get(:uri => "/editor/#{type}/templates/#{uuid}", :fields => x_cookie)
+      res = http_get(uri: "/editor/#{type}/templates/#{uuid}", fields: x_cookie)
     end
 
     # Performs scan with templatename provided (name, title or uuid of scan).
@@ -559,17 +559,17 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.host_detail(123, 1234)
     def host_detail(scan_id, host_id)
-      res = http_get(:uri => "/scans/#{scan_id}/hosts/#{host_id}", :fields => x_cookie)
+      res = http_get(uri: "/scans/#{scan_id}/hosts/#{host_id}", fields: x_cookie)
     end
 
     def report_download(scan_id, file_id)
-      res = http_get(:uri => "/scans/#{scan_id}/export/#{file_id}/download", :raw_content => true, :fields => x_cookie)
+      res = http_get(uri: "/scans/#{scan_id}/export/#{file_id}/download", raw_content: true, fields: x_cookie)
     end
 
     def report_download_quick(scan_id, format)
       se = scan_export(scan_id, format)
       # ready, loading
-      while (status = scan_export_status(scan_id, se['file'])['status']) != "ready" do
+      while (status = scan_export_status(scan_id, se['file'])['status']) != 'ready' do
         # puts status
         if status.nil? or status == '' then
           return nil
