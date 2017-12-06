@@ -10,7 +10,6 @@ Gem::Specification.new do |spec|
   spec.description = %Q{Ruby library for Nessus (version 6+) JSON/REST interface. This library is used for communication with Nessus over REST interface. You can start, stop, pause and resume scan. Watch progress and status of scan, download report, etc. }
   spec.email = 'vlatko.kosturjak@gmail.com'
   spec.authors = ['Vlatko Kosturjak']
-  # spec.version = '0.1.5'
   spec.version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
   spec.files         = `git ls-files`.split($/)
@@ -21,5 +20,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler', '>= 1.1'
   spec.add_development_dependency 'pry'
   spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec', '~> 3.7'
+  spec.add_development_dependency 'rubocop', '~> 0.51'
   spec.add_development_dependency 'yard'
 end
