@@ -20,5 +20,5 @@ sl['scans'].each do |s|
     outputfn = folders_id[s['folder_id']] + '__' + s['name'] + '__' + s['id'].to_s + '.' + format
     puts "-> Format: #{format} Filename: #{outputfn}"
     n.report_download_file(s['id'], format, outputfn)
-  end # formats
-end # scans
+  end
+end

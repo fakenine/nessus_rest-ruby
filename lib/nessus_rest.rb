@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # = nessus_rest.rb: communicate with Nessus(6+) over JSON REST interface
 #
 # Author:: Vlatko Kosturjak
@@ -54,11 +53,6 @@ module NessusREST
     attr_accessor :defsleep, :httpsleep, :httpretry, :ssl_use, :ssl_verify, :autologin
     attr_reader :x_cookie
 
-    class << self
-      @connection
-      @token
-    end
-
     # initialize quick scan defaults: these will be used when not specifying defaults
     #
     # Usage:
@@ -89,6 +83,7 @@ module NessusREST
       @defsleep = params.fetch(:defsleep, 1)
       @httpretry = params.fetch(:httpretry, 3)
       @httpsleep = params.fetch(:httpsleep, 1)
+      @@token = nil
 
       init_quick_defaults
 
@@ -146,13 +141,12 @@ module NessusREST
         authenticationmethod: true
       }
       res = http_post(uri: '/session', data: payload)
-      if res['token']
-        @token = "token=#{res['token']}"
-        @x_cookie = { 'X-Cookie' => @token }
-        return true
-      else
-        false
-      end
+
+      return false unless res['token']
+
+      @token = "token=#{res['token']}"
+      @x_cookie = { 'X-Cookie' => @token }
+      true
     end
 
     # checks if we're logged in correctly
@@ -168,11 +162,7 @@ module NessusREST
     #	puts "Error"
     #  end
     def authenticated
-      if @token&.include?('token=')
-        true
-      else
-        false
-      end
+      @token&.include?('token=')
     end
 
     # try to get server properties
@@ -335,7 +325,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.list_templates
     def list_templates(type)
-      res = http_get(uri: "/editor/#{type}/templates", fields: x_cookie)
+      http_get(uri: "/editor/#{type}/templates", fields: x_cookie)
     end
 
     def plugin_details(plugin_id)
@@ -356,11 +346,7 @@ module NessusREST
     #  end
     def is_admin
       res = http_get(uri: '/session', fields: x_cookie)
-      if res['permissions'] == 128
-        return true
-      else
-        return false
-      end
+      res['permissions'] == 128
     end
 
     # Get server status
@@ -442,8 +428,7 @@ module NessusREST
     #  puts n.scan_delete(1)
     def scan_delete(scan_id)
       res = http_delete(uri: "/scans/#{scan_id}", fields: x_cookie)
-      return true if res.code == 200
-      false
+      res.code == 200
     end
 
     def policy_delete(policy_id)
@@ -460,7 +445,7 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.editor_templates('scan',uuid)
     def editor_templates(type, uuid)
-      res = http_get(uri: "/editor/#{type}/templates/#{uuid}", fields: x_cookie)
+      http_get(uri: "/editor/#{type}/templates/#{uuid}", fields: x_cookie)
     end
 
     # Performs scan with templatename provided (name, title or uuid of scan).
@@ -488,7 +473,7 @@ module NessusREST
       et.merge!(@quick_defaults)
       et['name'] = name
       et['text_targets'] = targets
-      sc = scan_create(tuuid, et)
+      scan_create(tuuid, et)
     end
 
     # Performs scan with scan policy provided (uuid of policy or policy name).
@@ -516,7 +501,7 @@ module NessusREST
       et.merge!(@quick_defaults)
       et['name'] = name
       et['text_targets'] = targets
-      sc = scan_create(tuuid, et)
+      scan_create(tuuid, et)
     end
 
     def scan_status(scan_id)
@@ -527,15 +512,11 @@ module NessusREST
 
     def scan_finished?(scan_id)
       ss = scan_status(scan_id)
-      return true if (ss == 'completed') || (ss == 'canceled') || (ss == 'imported')
-      false
+      (ss == 'completed') || (ss == 'canceled') || (ss == 'imported')
     end
 
     def scan_wait4finish(scan_id)
-      until scan_finished?(scan_id)
-        # puts scan_status(scan_id)
-        sleep @defsleep
-      end
+      sleep @defsleep until scan_finished?(scan_id)
     end
 
     # Get host details from the scan
@@ -547,11 +528,11 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.host_detail(123, 1234)
     def host_detail(scan_id, host_id)
-      res = http_get(uri: "/scans/#{scan_id}/hosts/#{host_id}", fields: x_cookie)
+      http_get(uri: "/scans/#{scan_id}/hosts/#{host_id}", fields: x_cookie)
     end
 
     def report_download(scan_id, file_id)
-      res = http_get(uri: "/scans/#{scan_id}/export/#{file_id}/download", raw_content: true, fields: x_cookie)
+      http_get(uri: "/scans/#{scan_id}/export/#{file_id}/download", raw_content: true, fields: x_cookie)
     end
 
     def report_download_quick(scan_id, format)
@@ -562,8 +543,7 @@ module NessusREST
         return nil if status.nil? || (status == '')
         sleep @defsleep
       end
-      rf = report_download(scan_id, se['file'])
-      rf
+      report_download(scan_id, se['file'])
     end
 
     def report_download_file(scan_id, format, outputfn)
@@ -595,10 +575,8 @@ module NessusREST
       if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
         authdefault
         ret = http_put_low(opts)
-        return ret
-      else
-        return ret
       end
+      ret
     end
 
     def http_put_low(opts = {})
@@ -617,15 +595,13 @@ module NessusREST
       begin
         tries -= 1
         res = @connection.request(req)
-      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
+      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError
         if tries.positive?
           sleep @httpsleep
           retry
-        else
-          return res
         end
       rescue URI::InvalidURIError
-        return res
+        nil
       end
 
       res
@@ -645,10 +621,8 @@ module NessusREST
       if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
         authdefault
         ret = http_delete_low(opts)
-        return ret
-      else
-        return ret
       end
+      ret
     end
 
     def http_delete_low(opts = {})
@@ -666,15 +640,13 @@ module NessusREST
       begin
         tries -= 1
         res = @connection.request(req)
-      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
+      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError
         if tries.positive?
           sleep @httpsleep
           retry
-        else
-          return res
         end
       rescue URI::InvalidURIError
-        return res
+        nil
       end
 
       res
@@ -691,25 +663,20 @@ module NessusREST
     def http_get(opts = {})
       raw_content = opts[:raw_content] || false
       ret = http_get_low(opts)
-      if !raw_content
-        if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
-          authdefault
-          ret = http_get_low(opts)
-          return ret
-        else
-          return ret
-        end
-      else
-        return ret
+
+      if !raw_content && ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
+        authdefault
+        ret = http_get_low(opts)
       end
+
+      ret
     end
 
     def http_get_low(opts = {})
       uri    = opts[:uri]
       fields = opts[:fields] || {}
       raw_content = opts[:raw_content] || false
-      json   = {}
-      tries  = @httpretry
+      tries = @httpretry
 
       req = Net::HTTP::Get.new(uri)
       fields.each_pair do |name, value|
@@ -719,16 +686,15 @@ module NessusREST
       begin
         tries -= 1
         res = @connection.request(req)
-      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        if tries.positive?
-          sleep @httpsleep
-          retry
-        else
-          return json
-        end
+      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError
+        return {} unless tries.positive?
+
+        sleep @httpsleep
+        retry
       rescue URI::InvalidURIError
-        return json
+        return {}
       end
+
       if !raw_content
         parse_json(res.body)
       else
@@ -750,16 +716,14 @@ module NessusREST
         authzmethod = opts[:authenticationmethod]
         opts.delete(:authenticationmethod)
       end
+
       ret = http_post_low(opts)
-      if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
-        unless authzmethod
-          authdefault
-          ret = http_post_low(opts)
-          return ret
-              end
-      else
-        return ret
+      if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials') && !authzmethod
+        authdefault
+        ret = http_post_low(opts)
       end
+
+      ret
     end
 
     def http_post_low(opts = {})
@@ -768,7 +732,6 @@ module NessusREST
       fields = opts[:fields] || {}
       body   = opts[:body]
       ctype  = opts[:ctype]
-      json   = {}
       tries  = @httpretry
 
       req = Net::HTTP::Post.new(uri)
@@ -782,15 +745,13 @@ module NessusREST
       begin
         tries -= 1
         res = @connection.request(req)
-      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        if tries.positive?
-          sleep @httpsleep
-          retry
-        else
-          return json
-        end
+      rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError
+        return {} unless tries.positive?
+
+        sleep @httpsleep
+        retry
       rescue URI::InvalidURIError
-        return json
+        return {}
       end
 
       parse_json(res.body)
@@ -801,14 +762,9 @@ module NessusREST
     # returns: JSON parsed object (if JSON parseable)
     #
     def parse_json(body)
-      buf = {}
-
-      begin
-        buf = JSON.parse(body)
-      rescue JSON::ParserError
-      end
-
-      buf
+      JSON.parse(body)
+    rescue JSON::ParserError
+      {}
     end
-  end # of Client class
-end # of NessusREST module
+  end
+end
