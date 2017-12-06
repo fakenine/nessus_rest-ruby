@@ -2,10 +2,10 @@
 
 require 'nessus_rest'
 
-n = NessusREST::Client.new({ url: 'https://localhost:8834', username: 'user', password: 'password' })
+n = NessusREST::Client.new(url: 'https://localhost:8834', username: 'user', password: 'password')
 
-formats = ['nessus', 'csv', 'html']
-folders_id = Hash.new
+formats = %w[nessus csv html]
+folders_id = {}
 
 sl = n.list_scans
 

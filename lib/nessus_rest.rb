@@ -1,6 +1,4 @@
 #!/usr/bin/env ruby
-# coding: utf-8
-
 # = nessus_rest.rb: communicate with Nessus(6+) over JSON REST interface
 #
 # Author:: Vlatko Kosturjak
@@ -67,7 +65,7 @@ module NessusREST
     #
     #  n.init_quick_defaults()
     def init_quick_defaults
-      @quick_defaults = Hash.new
+      @quick_defaults = {}
       @quick_defaults['enabled'] = false
       @quick_defaults['launch'] = 'ONETIME'
       @quick_defaults['launch_now'] = true
@@ -92,17 +90,17 @@ module NessusREST
       @httpretry = params.fetch(:httpretry, 3)
       @httpsleep = params.fetch(:httpsleep, 1)
 
-      init_quick_defaults()
+      init_quick_defaults
 
       uri = URI.parse(@nessusurl)
       @connection = Net::HTTP.new(uri.host, uri.port)
       @connection.use_ssl = @ssl_use
 
-      if @ssl_verify
-        @connection.verify_mode = OpenSSL::SSL::VERIFY_PEER
-      else
-        @connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      end
+      @connection.verify_mode = if @ssl_verify
+                                  OpenSSL::SSL::VERIFY_PEER
+                                else
+                                  OpenSSL::SSL::VERIFY_NONE
+                                end
 
       yield @connection if block_given?
       authenticate(@username, @password) if @autologin
@@ -125,7 +123,7 @@ module NessusREST
       @password = password
       authdefault
     end
-    alias_method :login, :authenticate
+    alias login authenticate
 
     # Tries to authenticate to the Nessus REST JSON interface
     #
@@ -170,10 +168,10 @@ module NessusREST
     #	puts "Error"
     #  end
     def authenticated
-      if (@token && @token.include?('token='))
-        return true
+      if @token&.include?('token=')
+        true
       else
-        return false
+        false
       end
     end
 
@@ -188,7 +186,7 @@ module NessusREST
     def get_server_properties
       http_get(uri: '/server/properties', fields: x_cookie)
     end
-    alias_method :server_properties, :get_server_properties
+    alias server_properties get_server_properties
 
     # Add user to server
     #
@@ -222,7 +220,7 @@ module NessusREST
     #  puts n.user_delete(1)
     def user_delete(user_id)
       res = http_delete(uri: "/users/#{user_id}", fields: x_cookie)
-      return res.code
+      res.code
     end
 
     # change password for user_id
@@ -239,7 +237,7 @@ module NessusREST
         json: 1
       }
       res = http_put(uri: "/users/#{user_id}/chpasswd", data: payload, fields: x_cookie)
-      return res.code
+      res.code
     end
 
     # logout from the server
@@ -252,9 +250,9 @@ module NessusREST
     #  puts n.user_logout
     def user_logout
       res = http_delete(uri: '/session', fields: x_cookie)
-      return res.code
+      res.code
     end
-    alias_method :logout, :user_logout
+    alias logout user_logout
 
     # Get List of Policies
     #
@@ -401,7 +399,7 @@ module NessusREST
     def scan_list
       http_get(uri: '/scans', fields: x_cookie)
     end
-    alias_method :list_scans, :scan_list
+    alias list_scans scan_list
 
     def scan_details(scan_id)
       http_get(uri: "/scans/#{scan_id}", fields: x_cookie)
@@ -431,7 +429,7 @@ module NessusREST
       request.add_field('X-Cookie', @token)
       res = @connection.request(request)
       res = JSON.parse(res.body)
-      return res
+      res
     end
 
     # delete scan with scan_id
@@ -444,15 +442,13 @@ module NessusREST
     #  puts n.scan_delete(1)
     def scan_delete(scan_id)
       res = http_delete(uri: "/scans/#{scan_id}", fields: x_cookie)
-      if res.code == 200 then
-        return true
-      end
-      return false
+      return true if res.code == 200
+      false
     end
 
     def policy_delete(policy_id)
       res = http_delete(uri: "/policies/#{policy_id}", fields: x_cookie)
-      return res.code
+      res.code
     end
 
     # Get template by type and uuid. Type can be 'policy' or 'scan'
@@ -484,11 +480,9 @@ module NessusREST
     #
     def scan_quick_template(templatename, name, targets)
       templates = list_templates('scan')['templates'].select do |temp|
-        temp['uuid'] == templatename or temp['name'] == templatename or temp['title'] == templatename
+        (temp['uuid'] == templatename) || (temp['name'] == templatename) || (temp['title'] == templatename)
       end
-      if templates.nil? then
-        return nil
-      end
+      return nil if templates.nil?
       tuuid = templates.first['uuid']
       et = editor_templates('scan', tuuid)
       et.merge!(@quick_defaults)
@@ -514,13 +508,11 @@ module NessusREST
     #
     def scan_quick_policy(policyname, name, targets)
       templates = list_policies['policies'].select do |pol|
-        pol['template_uuid'] == policyname or pol['name'] == policyname
+        (pol['template_uuid'] == policyname) || (pol['name'] == policyname)
       end
-      if templates.nil? then
-        return nil
-      end
+      return nil if templates.nil?
       tuuid = templates.first['template_uuid']
-      et = Hash.new
+      et = {}
       et.merge!(@quick_defaults)
       et['name'] = name
       et['text_targets'] = targets
@@ -529,22 +521,18 @@ module NessusREST
 
     def scan_status(scan_id)
       sd = scan_details(scan_id)
-      if not sd['error'].nil?
-        return 'error'
-      end
-      return sd['info']['status']
+      return 'error' unless sd['error'].nil?
+      sd['info']['status']
     end
 
     def scan_finished?(scan_id)
       ss = scan_status(scan_id)
-      if ss == 'completed' or ss == 'canceled' or ss == 'imported' then
-        return true
-      end
-      return false
+      return true if (ss == 'completed') || (ss == 'canceled') || (ss == 'imported')
+      false
     end
 
     def scan_wait4finish(scan_id)
-      while not scan_finished?(scan_id) do
+      until scan_finished?(scan_id)
         # puts scan_status(scan_id)
         sleep @defsleep
       end
@@ -569,15 +557,13 @@ module NessusREST
     def report_download_quick(scan_id, format)
       se = scan_export(scan_id, format)
       # ready, loading
-      while (status = scan_export_status(scan_id, se['file'])['status']) != 'ready' do
+      while (status = scan_export_status(scan_id, se['file'])['status']) != 'ready'
         # puts status
-        if status.nil? or status == '' then
-          return nil
-        end
+        return nil if status.nil? || (status == '')
         sleep @defsleep
       end
       rf = report_download(scan_id, se['file'])
-      return rf
+      rf
     end
 
     def report_download_file(scan_id, format, outputfn)
@@ -606,7 +592,7 @@ module NessusREST
     #  puts res.code
     def http_put(opts = {})
       ret = http_put_low(opts)
-      if ret.is_a?(Hash) and ret.has_key?('error') and ret['error'] == 'Invalid Credentials' then
+      if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
         authdefault
         ret = http_put_low(opts)
         return ret
@@ -623,7 +609,7 @@ module NessusREST
       tries  = @httpretry
 
       req = Net::HTTP::Put.new(uri)
-      req.set_form_data(data) unless (data.nil? || data.empty?)
+      req.set_form_data(data) unless data.nil? || data.empty?
       fields.each_pair do |name, value|
         req.add_field(name, value)
       end
@@ -632,7 +618,7 @@ module NessusREST
         tries -= 1
         res = @connection.request(req)
       rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        if tries > 0
+        if tries.positive?
           sleep @httpsleep
           retry
         else
@@ -656,7 +642,7 @@ module NessusREST
     #  puts res.code
     def http_delete(opts = {})
       ret = http_delete_low(opts)
-      if ret.is_a?(Hash) and ret.has_key?('error') and ret['error'] == 'Invalid Credentials' then
+      if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
         authdefault
         ret = http_delete_low(opts)
         return ret
@@ -681,7 +667,7 @@ module NessusREST
         tries -= 1
         res = @connection.request(req)
       rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        if tries > 0
+        if tries.positive?
           sleep @httpsleep
           retry
         else
@@ -705,8 +691,8 @@ module NessusREST
     def http_get(opts = {})
       raw_content = opts[:raw_content] || false
       ret = http_get_low(opts)
-      if !raw_content then
-        if ret.is_a?(Hash) and ret.has_key?('error') and ret['error'] == 'Invalid Credentials' then
+      if !raw_content
+        if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
           authdefault
           ret = http_get_low(opts)
           return ret
@@ -734,7 +720,7 @@ module NessusREST
         tries -= 1
         res = @connection.request(req)
       rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        if tries > 0
+        if tries.positive?
           sleep @httpsleep
           retry
         else
@@ -759,14 +745,14 @@ module NessusREST
     #  n=NessusREST::Client.new (:url=>'https://localhost:8834', :username=>'user', :password=> 'password')
     #  pp n.http_post(:uri=>"/scans/#{scan_id}/launch", :fields=>n.x_cookie)
     def http_post(opts = {})
-      if opts.has_key?(:authenticationmethod) then
+      if opts.key?(:authenticationmethod)
         # i know authzmethod = opts.delete(:authorizationmethod) is short, but not readable
         authzmethod = opts[:authenticationmethod]
         opts.delete(:authenticationmethod)
       end
       ret = http_post_low(opts)
-      if ret.is_a?(Hash) and ret.has_key?('error') and ret['error'] == 'Invalid Credentials' then
-        if not authzmethod
+      if ret.is_a?(Hash) && ret.key?('error') && (ret['error'] == 'Invalid Credentials')
+        unless authzmethod
           authdefault
           ret = http_post_low(opts)
           return ret
@@ -786,9 +772,9 @@ module NessusREST
       tries  = @httpretry
 
       req = Net::HTTP::Post.new(uri)
-      req.set_form_data(data) unless (data.nil? || data.empty?)
-      req.body = body unless (body.nil? || body.empty?)
-      req['Content-Type'] = ctype unless (ctype.nil? || ctype.empty?)
+      req.set_form_data(data) unless data.nil? || data.empty?
+      req.body = body unless body.nil? || body.empty?
+      req['Content-Type'] = ctype unless ctype.nil? || ctype.empty?
       fields.each_pair do |name, value|
         req.add_field(name, value)
       end
@@ -797,7 +783,7 @@ module NessusREST
         tries -= 1
         res = @connection.request(req)
       rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-        if tries > 0
+        if tries.positive?
           sleep @httpsleep
           retry
         else
