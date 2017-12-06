@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/kost/nessus_rest-ruby.png)](https://travis-ci.org/kost/nessus_rest-ruby)
-[![Coverage Status](https://coveralls.io/repos/kost/nessus_rest-ruby/badge.png?branch=master)](https://coveralls.io/r/kost/nessus_rest-ruby?branch=master)
+[![Build Status](https://travis-ci.org/Cyberwatch/nessus_rest-ruby.svg?branch=master)](https://travis-ci.org/Cyberwatch/nessus_rest-ruby)
+[![Coverage Status](https://coveralls.io/repos/github/Cyberwatch/nessus_rest-ruby/badge.svg?branch=master)](https://coveralls.io/github/Cyberwatch/nessus_rest-ruby?branch=master)
 
 # nessus_rest
 
