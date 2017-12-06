@@ -10,12 +10,12 @@ Communicate with Nessus Scanner (version 6+) over REST/JSON interface
 ```ruby
 require 'nessus_rest'
 
-n=NessusREST::Client.new ({
-	:url=>'https://localhost:8834', 
-	:username=>'user',
-	:password=> 'password' })
-qs=n.scan_quick_template('basic','name-of-scan','localhost')
-scanid=qs['scan']['id']
+n = NessusREST::Client.new (
+	url: 'https://localhost:8834',
+	username: 'user',
+	password: 'password')
+qs = n.scan_quick_template('basic','name-of-scan','localhost')
+scanid = qs['scan']['id']
 n.scan_wait4finish(scanid)
 n.report_download_file(scanid,'csv','myscanreport.csv')
 ```
@@ -24,25 +24,15 @@ n.report_download_file(scanid,'csv','myscanreport.csv')
 
 Add this line to your application's Gemfile:
 
-    gem 'nessus_rest'
+    gem 'nessus_rest', git: 'https://github.com/Cyberwatch/nessus_rest-ruby.git'
 
 And then execute:
 
     $ bundle
 
-Or install it yourself as:
-
-    $ gem install nessus_rest
-
 ## Requirements
 
-Requirements are quite standard Ruby libraries for HTTPS and JSON
-parsing:
-```ruby
-require 'uri'
-require 'net/https'
-require 'json'
-```
+Require Ruby >= 2.3
 
 ## Contributing
 
@@ -56,11 +46,12 @@ require 'json'
 - [ ] Provide more examples
 
 ## Copyright
-Copyright (c) 2016 Vlatko Kosturjak. See LICENSE.txt for
-further details.
+Copyright (c) 2016 Vlatko Kosturjak. See LICENSE.txt for further details.
+Copyright (c) 2017 Florian Wininger. See LICENSE.txt for further details.
 
 ## Credits
 
 Vlatko Kosturjak made initial Nessus XMLRPC library. Averagesecurityguy made
 initial JSON REST patches. Vlatko did bugfixes, gemification and few features.
+Florian Wininger and Cyberwatch Team dif the *production ready* gemification.
 
